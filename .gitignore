@@ -1,2 +1,6 @@
-mini_spider
 *.swp
+*.bak
+
+/mini_spider
+/log
+/output

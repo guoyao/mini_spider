@@ -18,6 +18,7 @@ type Config struct {
 
 func LoadConfigFromFile(filePath string) (*Config, error) {
 	var config Config
+
 	err := gcfg.ReadFileInto(&config, filePath)
 	if err != nil {
 		return nil, err
