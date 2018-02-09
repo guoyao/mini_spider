@@ -1,44 +1,44 @@
 package media
 
 import (
-	"io/ioutil"
-	"net/http"
+	"io"
 
 	"mini_spider/util"
 )
 
 type Webpage struct {
-	url      string
-	request  *http.Request
-	response *http.Response
-	content  []byte
-	depth    uint
-	children []*Webpage
+	name        string
+	url         string
+	content     io.Reader
+	contentType string
+	charset     string
 }
 
-func NewWebpage(req *http.Request, resp *http.Response) *Webpage {
-	return &Webpage{request: req, response: resp}
+func NewWebpage(url string, content io.Reader, contentType, charset string) *Webpage {
+	name := util.URLEncode(url)
+	return &Webpage{name: name, url: url, content: content, contentType: contentType, charset: charset}
 }
 
-func (w *Webpage) GetName() string {
-	return util.URLEncode(w.request.URL.String())
+func (webpage *Webpage) Name() string {
+	return webpage.name
 }
 
-func (w *Webpage) GetContent() ([]byte, error) {
-	if w.content != nil {
-		return w.content, nil
+func (webpage *Webpage) URL() string {
+	return webpage.url
+}
+
+func (webpage *Webpage) Content() io.Reader {
+	if content, ok := webpage.content.(io.Seeker); ok {
+		content.Seek(0, io.SeekStart)
 	}
 
-	if w.response != nil {
-		content, err := ioutil.ReadAll(w.response.Body)
-		if err != nil {
-			return nil, err
-		}
+	return webpage.content
+}
 
-		w.content = content
+func (webpage *Webpage) ContentType() string {
+	return webpage.contentType
+}
 
-		return w.content, nil
-	}
-
-	return []byte(""), nil
+func (webpage *Webpage) ContentCharset() string {
+	return webpage.charset
 }

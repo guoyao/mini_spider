@@ -1,12 +1,17 @@
 package fetcher
 
 import (
+	"bytes"
+	"errors"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
 
 	"mini_spider/media"
+	"mini_spider/util"
 )
 
 const (
@@ -36,16 +41,24 @@ func (w *WebpageFetcher) Fetch(req *http.Request) (media.Media, error) {
 		return nil, err
 	}
 
-	return media.NewWebpage(req, resp), nil
+	buf, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	contentType := resp.Header.Get("Content-Type")
+	charset := util.GetCharsetFromContentType(contentType)
+
+	return media.NewWebpage(req.URL.String(), bytes.NewReader(buf), contentType, charset), nil
 }
 
 func (w *WebpageFetcher) Save(media media.Media) error {
-	content, err := media.GetContent()
-	if err != nil {
-		return err
+	content := media.Content()
+	if content == nil {
+		return errors.New("content is nil")
 	}
 
-	path := filepath.Join(w.outputDir, media.GetName())
+	path := filepath.Join(w.outputDir, media.Name())
 	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0644)
 
 	defer file.Close()
@@ -54,7 +67,7 @@ func (w *WebpageFetcher) Save(media media.Media) error {
 		return err
 	}
 
-	_, err = file.Write(content)
+	_, err = io.Copy(file, content)
 	if err != nil {
 		return err
 	}

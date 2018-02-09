@@ -56,6 +56,7 @@ func main() {
 	err = util.MkdirAll(cfg.Spider.OutputDirectory)
 	if err != nil {
 		log.Logger.Critical(err)
+		log.Logger.Close()
 		os.Exit(1)
 	}
 
@@ -67,6 +68,12 @@ func main() {
 	}
 
 	fetcher := fetcher.NewWebpageFetcher(cfg.Spider.CrawlTimeout, cfg.Spider.OutputDirectory)
-	spider := spider.NewSpider(cfg.Spider.MaxDepth, cfg.Spider.CrawlInterval, cfg.Spider.ThreadCount, seeds, fetcher)
-	spider.Start()
+	spider := spider.NewSpider(
+		cfg.Spider.TargetUrl,
+		cfg.Spider.MaxDepth,
+		cfg.Spider.CrawlInterval,
+		cfg.Spider.ThreadCount,
+		fetcher,
+	)
+	spider.Start(seeds)
 }

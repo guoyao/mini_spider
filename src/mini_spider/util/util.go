@@ -1,11 +1,23 @@
 package util
 
 import (
+	"fmt"
+	"io"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
+
+	"golang.org/x/net/html/charset"
 )
+
+const (
+	JS_URL_PATTERN = "javascript:location.href="
+)
+
+var charsetRegexp, _ = regexp.Compile("charset=([^\\s]+)")
 
 // URLEncode encodes a string like Javascript's encodeURIComponent()
 func URLEncode(str string) string {
@@ -51,4 +63,34 @@ func GetAbsoluteUrl(baseUrl, relativeUrl string) (string, error) {
 	}
 
 	return base.ResolveReference(relative).String(), nil
+}
+
+func GetCharsetFromContentType(contentType string) string {
+	matchGroup := charsetRegexp.FindSubmatch([]byte(contentType))
+	if len(matchGroup) > 1 {
+		return string(matchGroup[1])
+	}
+
+	return ""
+}
+
+func ToUTF8(reader io.Reader, encoding string) ([]byte, error) {
+	utf8Reader, err := charset.NewReader(reader, encoding)
+	if err != nil {
+		return nil, err
+	}
+
+	return ioutil.ReadAll(utf8Reader)
+}
+
+func GetUrlFromJavascript(link string) string {
+	if strings.HasPrefix(link, JS_URL_PATTERN) {
+		link = strings.Trim(strings.Replace(link, JS_URL_PATTERN, "", 1), "\"'")
+	}
+
+	return link
+}
+
+func FormatTest(funcName, got, expected string) string {
+	return fmt.Sprintf("%s failed. Got %s, expected %s", funcName, got, expected)
 }

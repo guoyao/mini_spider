@@ -1,6 +1,13 @@
 package media
 
+import (
+	"io"
+)
+
 type Media interface {
-	GetName() string
-	GetContent() ([]byte, error)
+	Name() string
+	URL() string
+	Content() io.Reader
+	ContentType() string
+	ContentCharset() string
 }
