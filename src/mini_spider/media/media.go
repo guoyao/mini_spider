@@ -1,3 +1,4 @@
+/* package media provide different type contents for the fetch resource of spider */
 package media
 
 import (

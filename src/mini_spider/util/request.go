@@ -9,8 +9,8 @@ type Request struct {
 	Depth uint
 }
 
-func NewRequest(request *http.Request, depth uint) *Request {
-	return &Request{Request: request, Depth: depth}
+func NewRequest(req *http.Request, depth uint) *Request {
+	return &Request{Request: req, Depth: depth}
 }
 
 func NewRequests(requests []*http.Request, depth uint) []*Request {

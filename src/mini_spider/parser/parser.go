@@ -1,3 +1,4 @@
+/* package parser provide different content parser for the parse feature of spider */
 package parser
 
 import (

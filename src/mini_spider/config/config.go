@@ -1,3 +1,4 @@
+/* package config provide the structure of spider's main config */
 package config
 
 import (

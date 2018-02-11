@@ -1,3 +1,4 @@
+/* package log provide log feature for application */
 package log
 
 import (
@@ -17,7 +18,7 @@ var levelMap map[string]log4go.Level = map[string]log4go.Level{
 	"CRITICAL": log4go.CRITICAL,
 }
 
-func Init(logFileNamePrefix, rootDirectory, levelStr string, hasStdout bool) {
+func Init(logFileNamePrefix, rootDir, levelStr string, hasStdout bool) {
 	Logger = make(log4go.Logger)
 
 	level := levelMap[levelStr]
@@ -25,10 +26,10 @@ func Init(logFileNamePrefix, rootDirectory, levelStr string, hasStdout bool) {
 		level = levelMap["INFO"]
 	}
 
-	writer := log4go.NewFileLogWriter(filepath.Join(rootDirectory, logFileNamePrefix+".log"), false)
+	writer := log4go.NewFileLogWriter(filepath.Join(rootDir, logFileNamePrefix+".log"), false)
 	Logger.AddFilter("log", level, writer)
 
-	writer = log4go.NewFileLogWriter(filepath.Join(rootDirectory, logFileNamePrefix+".wf.log"), false)
+	writer = log4go.NewFileLogWriter(filepath.Join(rootDir, logFileNamePrefix+".wf.log"), false)
 	Logger.AddFilter("wf_log", log4go.ERROR, writer)
 
 	if hasStdout {

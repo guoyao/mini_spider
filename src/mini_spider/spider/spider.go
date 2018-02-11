@@ -1,3 +1,4 @@
+/* package spider provide the most important structure for spider */
 package spider
 
 import (
@@ -20,7 +21,8 @@ type Spider struct {
 	requestQueue  *util.RequestQueue
 }
 
-func NewSpider(targetUrl string, maxDepth, interval, threadCount uint, fetcher fetcher.Fetcher) *Spider {
+func NewSpider(targetUrl string, maxDepth, interval, threadCount uint,
+	fetcher fetcher.Fetcher) *Spider {
 	return &Spider{
 		targetUrl:     targetUrl,
 		maxDepth:      maxDepth,
@@ -31,25 +33,25 @@ func NewSpider(targetUrl string, maxDepth, interval, threadCount uint, fetcher f
 	}
 }
 
-func (spider *Spider) addSeeds(seeds []*Seed) {
+func (s *Spider) addSeeds(seeds []*Seed) {
 	for _, seed := range seeds {
 		req, err := http.NewRequest("GET", seed.url, nil)
 		if err != nil {
 			log.Logger.Error("init request for '" + seed.url + "' error: " + err.Error())
 			continue
 		}
-		spider.requestQueue.Push(util.NewRequest(req, 0))
+		s.requestQueue.Push(util.NewRequest(req, 0))
 	}
 }
 
-func (spider *Spider) Start(seeds []*Seed) {
+func (s *Spider) Start(seeds []*Seed) {
 	var wg sync.WaitGroup
 
-	spider.addSeeds(seeds)
-	routingChan := make(chan struct{}, spider.threadCount)
+	s.addSeeds(seeds)
+	routingChan := make(chan struct{}, s.threadCount)
 
 	for {
-		if spider.requestQueue.Len() == 0 && len(routingChan) == 0 {
+		if s.requestQueue.Len() == 0 && len(routingChan) == 0 {
 			break
 		}
 
@@ -63,7 +65,7 @@ func (spider *Spider) Start(seeds []*Seed) {
 				<-routingChan
 			}()
 
-			req, err := spider.requestQueue.Pop()
+			req, err := s.requestQueue.Pop()
 			if err != nil {
 				log.Logger.Error("get request from queue error: " + err.Error())
 				return
@@ -73,17 +75,17 @@ func (spider *Spider) Start(seeds []*Seed) {
 				return
 			}
 
-			media, err := spider.fetcher.Fetch(req.Request)
+			media, err := s.fetcher.Fetch(req.Request)
 			if err != nil {
 				log.Logger.Error("fetch error: " + err.Error())
 			} else {
-				err = spider.fetcher.Save(media)
+				err = s.fetcher.Save(media)
 				if err != nil {
 					log.Logger.Error("save to disk error: " + err.Error())
 				}
 
-				if req.Depth < spider.maxDepth {
-					parser, err := parser.GetParserByContentType(media.ContentType(), spider.targetUrl)
+				if req.Depth < s.maxDepth {
+					parser, err := parser.GetParserByContentType(media.ContentType(), s.targetUrl)
 					if err != nil {
 						log.Logger.Error("get parser error: " + err.Error())
 					} else if parser != nil {
@@ -91,12 +93,12 @@ func (spider *Spider) Start(seeds []*Seed) {
 						if err != nil {
 							log.Logger.Error("parse content error: " + err.Error())
 						} else if len(requests) > 0 {
-							spider.requestQueue.PushAll(util.NewRequests(requests, req.Depth+1))
+							s.requestQueue.PushAll(util.NewRequests(requests, req.Depth+1))
 						}
 					}
 				}
 			}
-			time.Sleep(spider.crawlInterval)
+			time.Sleep(s.crawlInterval)
 		}()
 	}
 

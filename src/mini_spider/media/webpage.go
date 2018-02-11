@@ -16,29 +16,30 @@ type Webpage struct {
 
 func NewWebpage(url string, content io.Reader, contentType, charset string) *Webpage {
 	name := util.URLEncode(url)
-	return &Webpage{name: name, url: url, content: content, contentType: contentType, charset: charset}
+	return &Webpage{name: name, url: url, content: content, contentType: contentType,
+		charset: charset}
 }
 
-func (webpage *Webpage) Name() string {
-	return webpage.name
+func (w *Webpage) Name() string {
+	return w.name
 }
 
-func (webpage *Webpage) URL() string {
-	return webpage.url
+func (w *Webpage) URL() string {
+	return w.url
 }
 
-func (webpage *Webpage) Content() io.Reader {
-	if content, ok := webpage.content.(io.Seeker); ok {
+func (w *Webpage) Content() io.Reader {
+	if content, ok := w.content.(io.Seeker); ok {
 		content.Seek(0, io.SeekStart)
 	}
 
-	return webpage.content
+	return w.content
 }
 
-func (webpage *Webpage) ContentType() string {
-	return webpage.contentType
+func (w *Webpage) ContentType() string {
+	return w.contentType
 }
 
-func (webpage *Webpage) ContentCharset() string {
-	return webpage.charset
+func (w *Webpage) ContentCharset() string {
+	return w.charset
 }

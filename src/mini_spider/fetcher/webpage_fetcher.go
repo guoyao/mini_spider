@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"mini_spider/media"
@@ -15,7 +16,8 @@ import (
 )
 
 const (
-	BROWSER_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36"
+	BROWSER_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 " +
+		"(KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36"
 )
 
 var httpClient *http.Client
@@ -39,6 +41,10 @@ func (w *WebpageFetcher) Fetch(req *http.Request) (media.Media, error) {
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, errors.New("status code is " + strconv.Itoa(resp.StatusCode))
 	}
 
 	buf, err := ioutil.ReadAll(resp.Body)

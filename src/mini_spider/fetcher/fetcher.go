@@ -1,3 +1,4 @@
+/* package fetcher provide different fetchers for the fetch feature of spider */
 package fetcher
 
 import (

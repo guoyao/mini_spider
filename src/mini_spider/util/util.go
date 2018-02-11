@@ -1,3 +1,4 @@
+/* package util provide lots of helper methods */
 package util
 
 import (

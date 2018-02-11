@@ -27,7 +27,7 @@ func NewWebpageParser(targetUrl string) (*WebpageParser, error) {
 	return &WebpageParser{urlPattern: urlPattern}, nil
 }
 
-func (parser *WebpageParser) Parse(m media.Media) ([]*http.Request, error) {
+func (p *WebpageParser) Parse(m media.Media) ([]*http.Request, error) {
 	content := m.Content()
 	if content == nil {
 		return nil, errors.New("content is nil")
@@ -48,7 +48,7 @@ func (parser *WebpageParser) Parse(m media.Media) ([]*http.Request, error) {
 
 	for _, link := range links {
 		absUrl, err := util.GetAbsoluteUrl(m.URL(), link)
-		if err == nil && absUrl != "" && parser.urlPattern.MatchString(absUrl) {
+		if err == nil && absUrl != "" && p.urlPattern.MatchString(absUrl) {
 			req, err := http.NewRequest("GET", absUrl, nil)
 			if err == nil {
 				requests = append(requests, req)

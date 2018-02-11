@@ -16,46 +16,46 @@ func NewRequestQueue() *RequestQueue {
 	return &RequestQueue{mutex: &sync.Mutex{}, list: list.New(), urlMap: make(map[string]bool)}
 }
 
-func (queue *RequestQueue) Push(request *Request) {
-	queue.mutex.Lock()
-	defer queue.mutex.Unlock()
+func (q *RequestQueue) Push(request *Request) {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
 
 	key := URLEncode(request.URL.String())
 
-	if _, ok := queue.urlMap[key]; ok {
+	if _, ok := q.urlMap[key]; ok {
 		return
 	}
 
-	queue.list.PushBack(request)
-	queue.urlMap[key] = true
+	q.list.PushBack(request)
+	q.urlMap[key] = true
 }
 
-func (queue *RequestQueue) PushAll(requests []*Request) {
-	queue.mutex.Lock()
-	defer queue.mutex.Unlock()
+func (q *RequestQueue) PushAll(requests []*Request) {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
 
 	for _, request := range requests {
 		key := URLEncode(request.URL.String())
 
-		if _, ok := queue.urlMap[key]; ok {
+		if _, ok := q.urlMap[key]; ok {
 			continue
 		}
 
-		queue.list.PushBack(request)
-		queue.urlMap[key] = true
+		q.list.PushBack(request)
+		q.urlMap[key] = true
 	}
 }
 
-func (queue *RequestQueue) Pop() (*Request, error) {
-	queue.mutex.Lock()
-	defer queue.mutex.Unlock()
+func (q *RequestQueue) Pop() (*Request, error) {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
 
-	if queue.list.Len() <= 0 {
+	if q.list.Len() <= 0 {
 		return nil, nil
 	}
 
-	item := queue.list.Front()
-	queue.list.Remove(item)
+	item := q.list.Front()
+	q.list.Remove(item)
 
 	if request, ok := item.Value.(*Request); ok {
 		return request, nil
@@ -64,9 +64,9 @@ func (queue *RequestQueue) Pop() (*Request, error) {
 	return nil, errors.New("queue item is not a valid request")
 }
 
-func (queue *RequestQueue) Len() int {
-	queue.mutex.Lock()
-	defer queue.mutex.Unlock()
+func (q *RequestQueue) Len() int {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
 
-	return queue.list.Len()
+	return q.list.Len()
 }

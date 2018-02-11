@@ -20,14 +20,16 @@ func TestCheckFileExists(t *testing.T) {
 	result := CheckFileExists("util_test.go")
 
 	if result != expected {
-		t.Error(FormatTest("CheckFileExists", strconv.FormatBool(result), strconv.FormatBool(expected)))
+		t.Error(FormatTest("CheckFileExists", strconv.FormatBool(result),
+			strconv.FormatBool(expected)))
 	}
 
 	expected = false
 	result = CheckFileExists("util_test_2.go")
 
 	if result != expected {
-		t.Error(FormatTest("CheckFileExists", strconv.FormatBool(result), strconv.FormatBool(expected)))
+		t.Error(FormatTest("CheckFileExists", strconv.FormatBool(result),
+			strconv.FormatBool(expected)))
 	}
 }
 
