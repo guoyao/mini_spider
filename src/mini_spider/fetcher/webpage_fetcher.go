@@ -43,6 +43,8 @@ func (w *WebpageFetcher) Fetch(req *http.Request) (media.Media, error) {
 		return nil, err
 	}
 
+	defer resp.Body.Close()
+
 	if resp.StatusCode >= 400 {
 		return nil, errors.New("status code is " + strconv.Itoa(resp.StatusCode))
 	}
