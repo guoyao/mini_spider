@@ -27,6 +27,20 @@ func URLEncode(str string) string {
 	return strings.Replace(url.QueryEscape(str), "+", "%20", -1)
 }
 
+// URLDecode decodes a string like Javascript's decodeURIComponent()
+func URLDecode(str string) (string, error) {
+	return url.QueryUnescape(str)
+}
+
+func FileNameFromUrl(str string) string {
+	index := strings.LastIndex(str, "/")
+	if index < 0 {
+		return ""
+	}
+
+	return str[index+1 : len(str)]
+}
+
 // CheckFileExists checks if specified file exists.
 func CheckFileExists(filename string) bool {
 	exist := true

@@ -7,11 +7,38 @@ import (
 )
 
 func TestURLEncode(t *testing.T) {
-	expected := "http%3A%2F%2Fwww.baidu.com%2Fexample%2F%E6%B5%8B%E8%AF%95"
-	result := URLEncode("http://www.baidu.com/example/测试")
+	expected := "http%3A%2F%2Fwww.baidu.com%2Fexample%2F%E6%B5%8B%E8%AF%95%20123"
+	result := URLEncode("http://www.baidu.com/example/测试 123")
 
 	if result != expected {
-		t.Error(FormatTest("URIEncode", result, expected))
+		t.Error(FormatTest("URLEncode", result, expected))
+	}
+}
+
+func TestURLDecode(t *testing.T) {
+	expected := "http://www.baidu.com/example/测试 123"
+	result, err := URLDecode("http%3A%2F%2Fwww.baidu.com%2Fexample%2F%E6%B5%8B%E8%AF%95%20123")
+
+	if err != nil {
+		t.Error("URLDecode failed: " + err.Error())
+	} else if result != expected {
+		t.Error(FormatTest("URLDecode", result, expected))
+	}
+}
+
+func TestFileNameFromUrl(t *testing.T) {
+	expected := "test 123.pdf"
+	result := FileNameFromUrl("http://www.baidu.com/example/test 123.pdf")
+
+	if result != expected {
+		t.Error(FormatTest("FileNameFromUrl", result, expected))
+	}
+
+	expected = "测 试 123.pdf"
+	result = FileNameFromUrl("http://www.baidu.com/example/测 试 123.pdf")
+
+	if result != expected {
+		t.Error(FormatTest("FileNameFromUrl", result, expected))
 	}
 }
 

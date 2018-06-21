@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -29,12 +30,13 @@ func TestParse(t *testing.T) {
     </body>
 </html>`
 
-	parser, err := NewWebpageParser(".*.(htm|html)$")
+	targetUrl, err := regexp.Compile(".*.(htm|html)$")
 	if err != nil {
 		t.Error(util.FormatTest(funcName, err.Error(), "nil"))
 		return
 	}
 
+	parser := NewWebpageParser(targetUrl)
 	webpage := media.NewWebpage("", strings.NewReader(html), "", "")
 	requests, err := parser.Parse(webpage)
 	if err != nil {

@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"mini_spider/log"
 	"mini_spider/media"
 	"mini_spider/util"
 )
@@ -66,14 +67,14 @@ func (w *WebpageFetcher) Save(media media.Media) error {
 		return errors.New("content is nil")
 	}
 
-	path := filepath.Join(w.outputDir, media.Name())
+	fileName := getFileName(media)
+	path := filepath.Join(w.outputDir, fileName)
 	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0644)
-
-	defer file.Close()
-
 	if err != nil {
 		return err
 	}
+
+	defer file.Close()
 
 	_, err = io.Copy(file, content)
 	if err != nil {
@@ -81,4 +82,29 @@ func (w *WebpageFetcher) Save(media media.Media) error {
 	}
 
 	return file.Sync()
+}
+
+func getFileName(media media.Media) string {
+	name := media.Name()
+	contentType := media.ContentType()
+	if contentType == "application/pdf" {
+		url, err := util.URLDecode(name)
+		if err == nil {
+			url, err = util.URLDecode(url)
+		}
+
+		if err != nil {
+			log.Logger.Warn("URLDecode failed: " + err.Error())
+			return name
+		}
+
+		fileName := util.FileNameFromUrl(url)
+		if fileName == "" {
+			return name
+		}
+
+		return fileName
+	}
+
+	return name
 }

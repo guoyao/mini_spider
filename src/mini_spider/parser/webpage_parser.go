@@ -14,17 +14,11 @@ import (
 )
 
 type WebpageParser struct {
-	urlPattern *regexp.Regexp
+	targetUrl *regexp.Regexp
 }
 
-func NewWebpageParser(targetUrl string) (*WebpageParser, error) {
-	urlPattern, err := regexp.Compile(targetUrl)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &WebpageParser{urlPattern: urlPattern}, nil
+func NewWebpageParser(targetUrl *regexp.Regexp) *WebpageParser {
+	return &WebpageParser{targetUrl: targetUrl}
 }
 
 func (p *WebpageParser) Parse(m media.Media) ([]*http.Request, error) {
@@ -48,7 +42,7 @@ func (p *WebpageParser) Parse(m media.Media) ([]*http.Request, error) {
 
 	for _, link := range links {
 		absUrl, err := util.GetAbsoluteUrl(m.URL(), link)
-		if err == nil && absUrl != "" && p.urlPattern.MatchString(absUrl) {
+		if err == nil && absUrl != "" {
 			req, err := http.NewRequest("GET", absUrl, nil)
 			if err == nil {
 				requests = append(requests, req)

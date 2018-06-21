@@ -3,6 +3,7 @@ package parser
 
 import (
 	"net/http"
+	"regexp"
 	"strings"
 
 	"mini_spider/media"
@@ -18,21 +19,17 @@ const (
 
 var parserMap map[string]Parser = make(map[string]Parser)
 
-func GetParserByContentType(contentType, urlPattern string) (Parser, error) {
+func GetParser(contentType string, targetUrl *regexp.Regexp) Parser {
 	switch {
 	case strings.HasPrefix(contentType, HTML):
 		if parser, ok := parserMap[HTML]; ok {
-			return parser, nil
+			return parser
 		}
 
-		parser, err := NewWebpageParser(urlPattern)
-		if err != nil {
-			return nil, err
-		}
-
+		parser := NewWebpageParser(targetUrl)
 		parserMap[HTML] = parser
-		return parser, nil
+		return parser
 	}
 
-	return nil, nil
+	return nil
 }

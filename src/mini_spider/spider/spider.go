@@ -3,6 +3,7 @@ package spider
 
 import (
 	"net/http"
+	"regexp"
 	"sync"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 )
 
 type Spider struct {
-	targetUrl     string
+	targetUrl     *regexp.Regexp
 	maxDepth      uint
 	crawlInterval time.Duration
 	threadCount   uint
@@ -21,8 +22,7 @@ type Spider struct {
 	requestQueue  *util.RequestQueue
 }
 
-func NewSpider(targetUrl string, maxDepth, interval, threadCount uint,
-	fetcher fetcher.Fetcher) *Spider {
+func NewSpider(targetUrl *regexp.Regexp, maxDepth, interval, threadCount uint, fetcher fetcher.Fetcher) *Spider {
 	return &Spider{
 		targetUrl:     targetUrl,
 		maxDepth:      maxDepth,
@@ -40,7 +40,7 @@ func (s *Spider) addSeeds(seeds []*Seed) {
 			log.Logger.Error("init request for '" + seed.url + "' error: " + err.Error())
 			continue
 		}
-		s.requestQueue.Push(util.NewRequest(req, 0))
+		s.requestQueue.Push(util.NewRequest(req, 0, s.targetUrl.MatchString(seed.url)))
 	}
 }
 
@@ -75,29 +75,32 @@ func (s *Spider) Start(seeds []*Seed) {
 				return
 			}
 
+			log.Logger.Info(req.URL.String())
+
 			media, err := s.fetcher.Fetch(req.Request)
 			if err != nil {
 				log.Logger.Error("fetch error: " + err.Error())
 			} else {
-				err = s.fetcher.Save(media)
-				if err != nil {
-					log.Logger.Error("save to disk error: " + err.Error())
+				if req.ShouldDownload {
+					err = s.fetcher.Save(media)
+					if err != nil {
+						log.Logger.Error("save to disk error: " + err.Error())
+					}
 				}
 
 				if req.Depth < s.maxDepth {
-					parser, err := parser.GetParserByContentType(media.ContentType(), s.targetUrl)
-					if err != nil {
-						log.Logger.Error("get parser error: " + err.Error())
-					} else if parser != nil {
+					parser := parser.GetParser(media.ContentType(), s.targetUrl)
+					if parser != nil {
 						requests, err := parser.Parse(media)
 						if err != nil {
 							log.Logger.Error("parse content error: " + err.Error())
 						} else if len(requests) > 0 {
-							s.requestQueue.PushAll(util.NewRequests(requests, req.Depth+1))
+							s.requestQueue.PushAll(util.NewRequests(requests, req.Depth+1, s.targetUrl))
 						}
 					}
 				}
 			}
+
 			time.Sleep(s.crawlInterval)
 		}()
 	}

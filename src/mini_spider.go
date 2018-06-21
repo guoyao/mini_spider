@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/docopt/docopt-go"
 
@@ -67,9 +68,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	targetUrl, err := regexp.Compile(cfg.Spider.TargetUrl)
+	if err != nil {
+		log.Logger.Critical(err)
+		log.Logger.Close()
+		os.Exit(1)
+	}
+
 	fetcher := fetcher.NewWebpageFetcher(cfg.Spider.CrawlTimeout, cfg.Spider.OutputDirectory)
 	spider := spider.NewSpider(
-		cfg.Spider.TargetUrl,
+		targetUrl,
 		cfg.Spider.MaxDepth,
 		cfg.Spider.CrawlInterval,
 		cfg.Spider.ThreadCount,
