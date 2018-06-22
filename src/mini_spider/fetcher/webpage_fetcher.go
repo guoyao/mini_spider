@@ -3,16 +3,13 @@ package fetcher
 import (
 	"bytes"
 	"errors"
-	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
-	"mini_spider/log"
 	"mini_spider/media"
+	"mini_spider/storage"
 	"mini_spider/util"
 )
 
@@ -24,16 +21,16 @@ const (
 var httpClient *http.Client
 
 type WebpageFetcher struct {
-	timeout   uint
-	outputDir string
+	timeout uint
+	storage storage.StorageDriver
 }
 
-func NewWebpageFetcher(timeout uint, outputDir string) *WebpageFetcher {
+func NewWebpageFetcher(timeout uint, storage storage.StorageDriver) *WebpageFetcher {
 	if httpClient == nil {
 		httpClient = &http.Client{Timeout: time.Duration(timeout) * time.Second}
 	}
 
-	return &WebpageFetcher{timeout: timeout, outputDir: outputDir}
+	return &WebpageFetcher{timeout: timeout, storage: storage}
 }
 
 func (w *WebpageFetcher) Fetch(req *http.Request) (media.Media, error) {
@@ -62,49 +59,5 @@ func (w *WebpageFetcher) Fetch(req *http.Request) (media.Media, error) {
 }
 
 func (w *WebpageFetcher) Save(media media.Media) error {
-	content := media.Content()
-	if content == nil {
-		return errors.New("content is nil")
-	}
-
-	fileName := getFileName(media)
-	path := filepath.Join(w.outputDir, fileName)
-	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		return err
-	}
-
-	defer file.Close()
-
-	_, err = io.Copy(file, content)
-	if err != nil {
-		return err
-	}
-
-	return file.Sync()
-}
-
-func getFileName(media media.Media) string {
-	name := media.Name()
-	contentType := media.ContentType()
-	if contentType == "application/pdf" {
-		url, err := util.URLDecode(name)
-		if err == nil {
-			url, err = util.URLDecode(url)
-		}
-
-		if err != nil {
-			log.Logger.Warn("URLDecode failed: " + err.Error())
-			return name
-		}
-
-		fileName := util.FileNameFromUrl(url)
-		if fileName == "" {
-			return name
-		}
-
-		return fileName
-	}
-
-	return name
+	return w.storage.Save(media)
 }

@@ -11,6 +11,7 @@ import (
 	"mini_spider/fetcher"
 	"mini_spider/log"
 	"mini_spider/spider"
+	"mini_spider/storage"
 	"mini_spider/util"
 )
 
@@ -75,7 +76,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	fetcher := fetcher.NewWebpageFetcher(cfg.Spider.CrawlTimeout, cfg.Spider.OutputDirectory)
+	//storage := storage.NewDiskStorage(cfg.Spider.OutputDirectory)
+	storage := storage.NewBosStorage(os.Getenv("BAIDU_BCE_AK"), os.Getenv("BAIDU_BCE_SK"), "allitebooks")
+	fetcher := fetcher.NewWebpageFetcher(cfg.Spider.CrawlTimeout, storage)
 	spider := spider.NewSpider(
 		targetUrl,
 		cfg.Spider.MaxDepth,

@@ -84,7 +84,7 @@ func (s *Spider) Start(seeds []*Seed) {
 				if req.ShouldDownload {
 					err = s.fetcher.Save(media)
 					if err != nil {
-						log.Logger.Error("save to disk error: " + err.Error())
+						log.Logger.Error("save error: " + err.Error())
 					}
 				}
 
