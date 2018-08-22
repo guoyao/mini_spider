@@ -1,6 +1,9 @@
 *.swp
 *.bak
+.DS_Store
 
 /mini_spider
 /log
 /output
+/pkg
+/bin

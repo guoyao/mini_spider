@@ -2,6 +2,7 @@
 package spider
 
 import (
+	"errors"
 	"net/http"
 	"regexp"
 	"sync"
@@ -9,6 +10,7 @@ import (
 
 	"mini_spider/fetcher"
 	"mini_spider/log"
+	"mini_spider/media"
 	"mini_spider/parser"
 	"mini_spider/util"
 )
@@ -40,7 +42,7 @@ func (s *Spider) addSeeds(seeds []*Seed) {
 			log.Logger.Error("init request for '" + seed.url + "' error: " + err.Error())
 			continue
 		}
-		s.requestQueue.Push(util.NewRequest(req, 0, s.targetUrl.MatchString(seed.url)))
+		s.requestQueue.Push(util.NewRequest(req, 0, true, s.targetUrl.MatchString(seed.url)))
 	}
 }
 
@@ -48,6 +50,7 @@ func (s *Spider) Start(seeds []*Seed) {
 	var wg sync.WaitGroup
 
 	s.addSeeds(seeds)
+	hosts := getHosts(seeds)
 	routingChan := make(chan struct{}, s.threadCount)
 
 	for {
@@ -66,39 +69,17 @@ func (s *Spider) Start(seeds []*Seed) {
 			}()
 
 			req, err := s.requestQueue.Pop()
-			if err != nil {
-				log.Logger.Error("get request from queue error: " + err.Error())
+			if err != nil || req == nil {
+				if err != nil {
+					log.Logger.Error("get request from queue error: " + err.Error())
+				}
 				return
 			}
 
-			if req == nil {
-				return
-			}
-
-			log.Logger.Info(req.URL.String())
-
-			media, err := s.fetcher.Fetch(req.Request)
-			if err != nil {
-				log.Logger.Error("fetch error: " + err.Error())
-			} else {
-				if req.ShouldDownload {
-					err = s.fetcher.Save(media)
-					if err != nil {
-						log.Logger.Error("save error: " + err.Error())
-					}
-				}
-
-				if req.Depth < s.maxDepth {
-					parser := parser.GetParser(media.ContentType(), s.targetUrl)
-					if parser != nil {
-						requests, err := parser.Parse(media)
-						if err != nil {
-							log.Logger.Error("parse content error: " + err.Error())
-						} else if len(requests) > 0 {
-							s.requestQueue.PushAll(util.NewRequests(requests, req.Depth+1, s.targetUrl))
-						}
-					}
-				}
+			media, err := fetch(s, req)
+			if err == nil && media != nil {
+				save(s, req, media)
+				parse(s, req, media, hosts)
 			}
 
 			time.Sleep(s.crawlInterval)
@@ -106,4 +87,41 @@ func (s *Spider) Start(seeds []*Seed) {
 	}
 
 	wg.Wait()
+}
+
+func fetch(s *Spider, req *util.Request) (media.Media, error) {
+	if req.ShouldParse || req.ShouldDownload {
+		log.Logger.Info(req.URL.String())
+		media, err := s.fetcher.Fetch(req.Request)
+		if err != nil {
+			log.Logger.Error("fetch error: " + err.Error())
+		}
+
+		return media, err
+	}
+
+	return nil, errors.New("invalid request")
+}
+
+func save(s *Spider, req *util.Request, media media.Media) {
+	if req.ShouldDownload {
+		err := s.fetcher.Save(media)
+		if err != nil {
+			log.Logger.Error("save error: " + err.Error())
+		}
+	}
+}
+
+func parse(s *Spider, req *util.Request, media media.Media, hosts []string) {
+	if req.Depth < s.maxDepth && req.ShouldParse {
+		parser := parser.GetParser(media.ContentType(), s.targetUrl)
+		if parser != nil {
+			requests, err := parser.Parse(media)
+			if err != nil {
+				log.Logger.Error("parse content error: " + err.Error())
+			} else if len(requests) > 0 {
+				s.requestQueue.PushAll(util.NewRequests(requests, req.Depth+1, s.targetUrl, hosts))
+			}
+		}
+	}
 }

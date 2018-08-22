@@ -3,5 +3,4 @@
 base_dir=$(cd `dirname $0`; pwd)
 export GOPATH="$GOPATH:$base_dir"
 
-cd src
-go run mini_spider.go
+go build -o bin/mini_spider mini_spider

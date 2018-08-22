@@ -3,6 +3,7 @@ package spider
 import (
 	"encoding/json"
 	"io/ioutil"
+	"net/url"
 )
 
 type Seed struct {
@@ -11,6 +12,15 @@ type Seed struct {
 
 func NewSeed(url string) *Seed {
 	return &Seed{url: url}
+}
+
+func (seed *Seed) getHost() (string, error) {
+	u, err := url.Parse(seed.url)
+	if err != nil {
+		return "", err
+	}
+
+	return u.Hostname(), nil
 }
 
 func LoadSeedsFromFile(filePath string) ([]*Seed, error) {
@@ -30,4 +40,15 @@ func LoadSeedsFromFile(filePath string) ([]*Seed, error) {
 	}
 
 	return seeds, nil
+}
+
+func getHosts(seeds []*Seed) []string {
+	hosts := make([]string, 0, len(seeds))
+	for _, seed := range seeds {
+		host, err := seed.getHost()
+		if err == nil {
+			hosts = append(hosts, host)
+		}
+	}
+	return hosts
 }
