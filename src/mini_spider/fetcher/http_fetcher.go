@@ -2,7 +2,7 @@ package fetcher
 
 import (
 	"bytes"
-	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -47,7 +47,7 @@ func (h *HttpFetcher) GetMetadata(r *http.Request) (media.Media, error) {
 	}
 
 	if resp.StatusCode >= 400 {
-		return nil, err
+		return nil, fmt.Errorf("status code is %d", resp.StatusCode)
 	}
 
 	contentType := resp.Header.Get("Content-Type")
@@ -76,7 +76,7 @@ func (h *HttpFetcher) Fetch(req *http.Request) (media.Media, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		return nil, errors.New("status code is " + strconv.Itoa(resp.StatusCode))
+		return nil, fmt.Errorf("status code is %d", resp.StatusCode)
 	}
 
 	buf, err := ioutil.ReadAll(resp.Body)
