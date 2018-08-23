@@ -1,8 +1,9 @@
-package util
+package helper
 
 import (
 	"container/list"
 	"errors"
+	"mini_spider/util"
 	"sync"
 )
 
@@ -20,7 +21,7 @@ func (q *RequestQueue) Push(request *Request) {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 
-	key := URLEncode(request.URL.String())
+	key := util.URLEncode(request.URL.String())
 
 	if _, ok := q.urlMap[key]; ok {
 		return
@@ -35,7 +36,7 @@ func (q *RequestQueue) PushAll(requests []*Request) {
 	defer q.mutex.Unlock()
 
 	for _, request := range requests {
-		key := URLEncode(request.URL.String())
+		key := util.URLEncode(request.URL.String())
 
 		if _, ok := q.urlMap[key]; ok {
 			continue

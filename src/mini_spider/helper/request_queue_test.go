@@ -1,6 +1,7 @@
-package util
+package helper
 
 import (
+	"mini_spider/util"
 	"net/http"
 	"strconv"
 	"testing"
@@ -12,17 +13,17 @@ func TestPush(t *testing.T) {
 	queue := NewRequestQueue()
 	req, err := http.NewRequest("GET", "https://www.baidu.com", nil)
 	if err != nil {
-		t.Error(FormatTest(funcName, err.Error(), "nil"))
+		t.Error(util.FormatTest(funcName, err.Error(), "nil"))
 		return
 	}
 
-	request := NewRequest(req, 1, false)
+	request := NewRequest(req, 1, false, false, nil)
 	queue.Push(request)
 	expected := 1
 	result := queue.Len()
 
 	if result != expected {
-		t.Error(FormatTest(funcName, strconv.Itoa(result), strconv.Itoa(expected)))
+		t.Error(util.FormatTest(funcName, strconv.Itoa(result), strconv.Itoa(expected)))
 	}
 }
 
@@ -33,18 +34,18 @@ func TestPushAll(t *testing.T) {
 	queue := NewRequestQueue()
 	req, err := http.NewRequest("GET", "https://www.baidu.com", nil)
 	if err != nil {
-		t.Error(FormatTest(funcName, err.Error(), "nil"))
+		t.Error(util.FormatTest(funcName, err.Error(), "nil"))
 		return
 	}
-	request := NewRequest(req, 1, false)
+	request := NewRequest(req, 1, false, false, nil)
 	requests = append(requests, request)
 
 	req, err = http.NewRequest("GET", "https://www.google.com", nil)
 	if err != nil {
-		t.Error(FormatTest(funcName, err.Error(), "nil"))
+		t.Error(util.FormatTest(funcName, err.Error(), "nil"))
 		return
 	}
-	request = NewRequest(req, 1, false)
+	request = NewRequest(req, 1, false, false, nil)
 	requests = append(requests, request)
 	queue.PushAll(requests)
 
@@ -52,7 +53,7 @@ func TestPushAll(t *testing.T) {
 	result := queue.Len()
 
 	if result != expected {
-		t.Error(FormatTest(funcName, strconv.Itoa(result), strconv.Itoa(expected)))
+		t.Error(util.FormatTest(funcName, strconv.Itoa(result), strconv.Itoa(expected)))
 	}
 }
 
@@ -62,17 +63,17 @@ func TestPop(t *testing.T) {
 	queue := NewRequestQueue()
 	req, err := http.NewRequest("GET", "https://www.baidu.com", nil)
 	if err != nil {
-		t.Error(FormatTest(funcName, err.Error(), "nil"))
+		t.Error(util.FormatTest(funcName, err.Error(), "nil"))
 		return
 	}
 
-	request := NewRequest(req, 1, false)
+	request := NewRequest(req, 1, false, false, nil)
 	queue.Push(request)
 	expected := 1
 	result := queue.Len()
 
 	if result != expected {
-		t.Error(FormatTest(funcName, strconv.Itoa(result), strconv.Itoa(expected)))
+		t.Error(util.FormatTest(funcName, strconv.Itoa(result), strconv.Itoa(expected)))
 	}
 
 	queue.Pop()
@@ -80,6 +81,6 @@ func TestPop(t *testing.T) {
 	result = queue.Len()
 
 	if result != expected {
-		t.Error(FormatTest(funcName, strconv.Itoa(result), strconv.Itoa(expected)))
+		t.Error(util.FormatTest(funcName, strconv.Itoa(result), strconv.Itoa(expected)))
 	}
 }

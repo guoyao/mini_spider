@@ -11,12 +11,13 @@ import (
 	"testing"
 
 	"mini_spider/media"
+	"mini_spider/storage"
 	"mini_spider/util"
 )
 
 func TestFetch(t *testing.T) {
 	funcName := "Fetch"
-	fetcher := NewWebpageFetcher(5, ".")
+	fetcher := NewHttpFetcher(5, storage.NewDiskStorage("."))
 	req, err := http.NewRequest("GET", "https://www.baidu.com", nil)
 	if err != nil {
 		t.Error(util.FormatTest(funcName, err.Error(), "nil"))
@@ -42,8 +43,8 @@ func TestFetch(t *testing.T) {
 
 func TestSave(t *testing.T) {
 	funcName, outputDir, content := "Save", ".", []byte("test content")
-	fetcher := NewWebpageFetcher(5, outputDir)
-	webpage := media.NewWebpage("http://test", bytes.NewReader(content), "", "")
+	fetcher := NewHttpFetcher(5, storage.NewDiskStorage(outputDir))
+	webpage := media.NewWebpage("http://test", bytes.NewReader(content), "", 0, "")
 	err := fetcher.Save(webpage)
 	if err != nil {
 		t.Error(util.FormatTest(funcName, err.Error(), "nil"))

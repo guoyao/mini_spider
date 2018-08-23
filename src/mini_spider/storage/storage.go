@@ -7,12 +7,14 @@ import (
 )
 
 type StorageDriver interface {
+	Exist(media media.Media) bool
 	Save(media media.Media) error
 }
 
 func getFileName(media media.Media) string {
 	name := media.Name()
 	contentType := media.ContentType()
+
 	if contentType == "application/pdf" {
 		url, err := util.URLDecode(name)
 		if err == nil {

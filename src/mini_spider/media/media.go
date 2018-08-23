@@ -10,5 +10,6 @@ type Media interface {
 	URL() string
 	Content() io.Reader
 	ContentType() string
+	ContentLength() uint
 	ContentCharset() string
 }

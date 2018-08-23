@@ -28,14 +28,16 @@ Options:
     -c CONF_FILE        	set config directory [default: ../conf]
     -l LOG_DIR          	set log directory [default: ../log]
     --depth=<n>			overrite depth config in CONF_FILE
+    --target-url=<targetUrl>	overrite targetUrl config in CONF_FILE
     --storage=<disk|bos>	set storage driver [default: disk]
 
 Example:
 
     ./mini_spider -c ../conf -l ../log
     ./mini_spider -c /home/xxx/mini_spider/conf -l /home/xxx/mini_spider/log
-    ./mini_spider --storage=bos
-    ./mini_spider --depth=2`
+    ./mini_spider --depth=2
+    ./mini_spider --target-url=(java|spring|go).*\\.(pdf)(\\?.+)?$
+    ./mini_spider --storage=bos`
 
 	return docopt.Parse(usage, nil, true, VERSION, false)
 }
@@ -54,6 +56,10 @@ func prepare(args map[string]interface{}) *config.Config {
 		if err == nil {
 			cfg.Spider.MaxDepth = uint(maxDepth)
 		}
+	}
+
+	if args["--target-url"] != nil {
+		cfg.Spider.TargetUrl = args["--target-url"].(string)
 	}
 
 	logDir := args["-l"].(string)
@@ -109,7 +115,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fetcher := fetcher.NewWebpageFetcher(cfg.Spider.CrawlTimeout, getStorageDriver(args, cfg))
+	fetcher := fetcher.NewHttpFetcher(cfg.Spider.CrawlTimeout, getStorageDriver(args, cfg))
 	spider := spider.NewSpider(
 		targetUrl,
 		cfg.Spider.MaxDepth,

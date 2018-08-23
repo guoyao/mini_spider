@@ -5,8 +5,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"mini_spider/media"
+	"mini_spider/util"
 )
 
 type DiskStorage struct {
@@ -15,6 +17,18 @@ type DiskStorage struct {
 
 func NewDiskStorage(outputDir string) *DiskStorage {
 	return &DiskStorage{outputDir: outputDir}
+}
+
+func (d *DiskStorage) Exist(media media.Media) bool {
+	if media.ContentLength() == 0 {
+		if strings.HasPrefix(media.ContentType(), "text/") {
+			return false
+		}
+	} else if media.ContentLength() < 50*1024 {
+		return false
+	}
+
+	return util.CheckFileExists(filepath.Join(d.outputDir, getFileName(media)))
 }
 
 func (d *DiskStorage) Save(media media.Media) error {

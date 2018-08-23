@@ -37,7 +37,7 @@ func TestParse(t *testing.T) {
 	}
 
 	parser := NewWebpageParser(targetUrl)
-	webpage := media.NewWebpage("", strings.NewReader(html), "", "")
+	webpage := media.NewWebpage("", strings.NewReader(html), "", uint(len(html)), "")
 	requests, err := parser.Parse(webpage)
 	if err != nil {
 		t.Error(util.FormatTest(funcName, err.Error(), "nil"))
