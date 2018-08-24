@@ -33,66 +33,45 @@ func NewHttpFetcher(timeout uint, storageDriver storage.StorageDriver) *HttpFetc
 	return &HttpFetcher{timeout: timeout, storageDriver: storageDriver}
 }
 
-func (h *HttpFetcher) GetMetadata(r *http.Request) (media.Media, error) {
-	url := r.URL.String()
-	req, err := http.NewRequest("HEAD", url, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("User-Agent", BROWSER_USER_AGENT)
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("status code is %d", resp.StatusCode)
-	}
-
-	contentType := resp.Header.Get("Content-Type")
-	contentLength, err := strconv.Atoi(resp.Header.Get("Content-Length"))
-	if err != nil {
-		contentLength = 0
-	}
-
-	charset := util.GetCharsetFromContentType(contentType)
-
-	return media.NewWebpage(url, nil, contentType, uint(contentLength), charset), nil
+func (h *HttpFetcher) Exist(media media.Media) bool {
+	return h.storageDriver.Exist(media)
 }
 
-func (h *HttpFetcher) Exist(metadata media.Media) bool {
-	return h.storageDriver.Exist(metadata)
-}
-
-func (h *HttpFetcher) Fetch(req *http.Request) (media.Media, error) {
+func (h *HttpFetcher) Fetch(req *http.Request, needBody func(media.Media) bool) (result media.Media, err error) {
 	req.Header.Set("User-Agent", BROWSER_USER_AGENT)
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("status code is %d", resp.StatusCode)
-	}
+	defer func() {
+		if result != nil && needBody != nil && needBody(result) {
+			buf, readBodyError := ioutil.ReadAll(resp.Body)
+			if readBodyError != nil {
+				result, err = nil, readBodyError
+			} else {
+				result.SetContent(bytes.NewReader(buf))
+			}
+		}
+	}()
 
-	buf, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
+	if resp.StatusCode >= 400 {
+		err = fmt.Errorf("status code is %d", resp.StatusCode)
 	}
 
 	contentType := resp.Header.Get("Content-Type")
-	contentLength, err := strconv.Atoi(resp.Header.Get("Content-Length"))
-	if err != nil {
+	contentLength, atoiError := strconv.Atoi(resp.Header.Get("Content-Length"))
+	if atoiError != nil {
 		contentLength = 0
 	}
 
 	charset := util.GetCharsetFromContentType(contentType)
 
-	return media.NewWebpage(req.URL.String(), bytes.NewReader(buf), contentType, uint(contentLength), charset), nil
+	result = media.NewWebpage(req.URL.String(), nil, contentType, uint(contentLength), charset)
+	return
 }
 
 func (h *HttpFetcher) Save(media media.Media) error {

@@ -17,7 +17,7 @@ func TestPush(t *testing.T) {
 		return
 	}
 
-	request := NewRequest(req, 1, false, false, nil)
+	request := NewRequest(req, 1, false)
 	queue.Push(request)
 	expected := 1
 	result := queue.Len()
@@ -37,7 +37,7 @@ func TestPushAll(t *testing.T) {
 		t.Error(util.FormatTest(funcName, err.Error(), "nil"))
 		return
 	}
-	request := NewRequest(req, 1, false, false, nil)
+	request := NewRequest(req, 1, false)
 	requests = append(requests, request)
 
 	req, err = http.NewRequest("GET", "https://www.google.com", nil)
@@ -45,7 +45,7 @@ func TestPushAll(t *testing.T) {
 		t.Error(util.FormatTest(funcName, err.Error(), "nil"))
 		return
 	}
-	request = NewRequest(req, 1, false, false, nil)
+	request = NewRequest(req, 1, false)
 	requests = append(requests, request)
 	queue.PushAll(requests)
 
@@ -67,7 +67,7 @@ func TestPop(t *testing.T) {
 		return
 	}
 
-	request := NewRequest(req, 1, false, false, nil)
+	request := NewRequest(req, 1, false)
 	queue.Push(request)
 	expected := 1
 	result := queue.Len()

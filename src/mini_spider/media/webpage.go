@@ -43,6 +43,10 @@ func (w *Webpage) Content() io.Reader {
 	return w.content
 }
 
+func (w *Webpage) SetContent(content io.Reader) {
+	w.content = content
+}
+
 func (w *Webpage) ContentType() string {
 	return w.contentType
 }

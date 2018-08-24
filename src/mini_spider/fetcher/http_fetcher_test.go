@@ -24,7 +24,9 @@ func TestFetch(t *testing.T) {
 		return
 	}
 
-	media, err := fetcher.Fetch(req)
+	media, err := fetcher.Fetch(req, func(media media.Media) bool {
+		return true
+	})
 	if err != nil {
 		t.Error(util.FormatTest(funcName, err.Error(), "nil"))
 		return

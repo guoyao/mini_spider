@@ -2,7 +2,7 @@
 package spider
 
 import (
-	"fmt"
+	"errors"
 	"net/http"
 	"regexp"
 	"strings"
@@ -69,14 +69,10 @@ func (s *Spider) Start(seeds []*Seed) {
 				return
 			}
 
-			if req.Metadata != nil && s.fetcher.Exist(req.Metadata) {
-				log.Logger.Info("skip exist: " + req.URL.String())
-			} else {
-				media, err := fetch(s, req)
-				if err == nil && media != nil {
-					save(s, req, media)
-					parse(s, req, media, hosts)
-				}
+			media, err := fetch(s, req, hosts)
+			if err == nil && media != nil {
+				save(s, req, media)
+				parse(s, req, media)
 			}
 
 			time.Sleep(s.crawlInterval)
@@ -93,22 +89,36 @@ func (s *Spider) addSeeds(seeds []*Seed) {
 			log.Logger.Error("init request for '" + seed.url + "' error: " + err.Error())
 			continue
 		}
-		s.requestQueue.Push(helper.NewRequest(req, 0, true,
-			s.targetUrl.MatchString(strings.ToLower(seed.url)), nil))
+		s.requestQueue.Push(helper.NewRequest(req, 0, s.targetUrl.MatchString(strings.ToLower(seed.url))))
 	}
 }
 
-func fetch(s *Spider, req *helper.Request) (media.Media, error) {
+func fetch(s *Spider, req *helper.Request, hosts []string) (media.Media, error) {
 	log.Logger.Info(req.URL.String())
-	media, err := s.fetcher.Fetch(req.Request)
-	if err != nil {
-		log.Logger.Error("fetch error: " + err.Error())
+
+	needBody := func(media media.Media) bool {
+		shouldParse := getShouldParse(req.Request.URL.Hostname(), media.ContentType(), hosts, s.targetUrl)
+		shouldDownload := s.targetUrl.MatchString(strings.ToLower(req.Request.URL.String()))
+		exists := s.fetcher.Exist(media)
+		if exists {
+			log.Logger.Info("skip exist: " + req.URL.String())
+		}
+		return !exists && (shouldParse || shouldDownload)
 	}
-	return media, err
+
+	if httpFetcher, ok := s.fetcher.(*fetcher.HttpFetcher); ok {
+		media, err := httpFetcher.Fetch(req.Request, needBody)
+		if err != nil {
+			log.Logger.Error("fetch error: " + err.Error())
+		}
+		return media, err
+	}
+
+	return nil, errors.New("no fetcher")
 }
 
 func save(s *Spider, req *helper.Request, media media.Media) {
-	if req.ShouldDownload {
+	if req.ShouldDownload && !s.fetcher.Exist(media) {
 		err := s.fetcher.Save(media)
 		if err != nil {
 			log.Logger.Error("save error: " + err.Error())
@@ -116,37 +126,20 @@ func save(s *Spider, req *helper.Request, media media.Media) {
 	}
 }
 
-func parse(s *Spider, req *helper.Request, media media.Media, hosts []string) {
-	if req.Depth < s.maxDepth && req.ShouldParse {
+func parse(s *Spider, req *helper.Request, media media.Media) {
+	if req.Depth < s.maxDepth {
 		parser := parser.GetParser(media.ContentType(), s.targetUrl)
 		if parser != nil {
 			requests, err := parser.Parse(media)
 			if err != nil {
 				log.Logger.Error("parse content error: " + err.Error())
 			} else if len(requests) > 0 {
-				requestSlice := make([]*helper.Request, 0, len(requests))
+				requestSlice := make([]*helper.Request, len(requests))
 
-				for _, request := range requests {
-					metadata, err := s.fetcher.GetMetadata(request)
-					if err != nil {
-						log.Logger.Error(fmt.Sprintf("get metadata for [%s] error: %s",
-							request.URL.String(), err.Error()))
-					} else {
-						shouldParse := getShouldParse(request.URL.Hostname(),
-							metadata.ContentType(), hosts, s.targetUrl)
-						shouldDownload := s.targetUrl.MatchString(
-							strings.ToLower(request.URL.String()))
-
-						if shouldParse || shouldDownload {
-							requestSlice = append(requestSlice, &helper.Request{
-								Request:        request,
-								Depth:          req.Depth + 1,
-								ShouldParse:    shouldParse,
-								ShouldDownload: shouldDownload,
-								Metadata:       metadata,
-							})
-						}
-					}
+				for i, request := range requests {
+					shouldDownload := s.targetUrl.MatchString(
+						strings.ToLower(request.URL.String()))
+					requestSlice[i] = helper.NewRequest(request, req.Depth+1, shouldDownload)
 				}
 
 				s.requestQueue.PushAll(requestSlice)
