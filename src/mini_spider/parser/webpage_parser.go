@@ -54,9 +54,9 @@ func (p *WebpageParser) Parse(m media.Media) ([]*http.Request, error) {
 }
 
 func visit(links []string, n *html.Node) []string {
-	if n.Type == html.ElementNode && n.Data == "a" {
+	if n.Type == html.ElementNode && (n.Data == "a" || n.Data == "img") {
 		for _, a := range n.Attr {
-			if a.Key == "href" {
+			if a.Key == "href" || a.Key == "src" {
 				link := a.Val
 				if strings.HasPrefix(link, "javascript:") {
 					link = util.GetUrlFromJavascript(link)

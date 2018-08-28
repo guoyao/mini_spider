@@ -5,6 +5,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/docopt/docopt-go"
 
@@ -16,7 +17,7 @@ import (
 	"mini_spider/util"
 )
 
-const VERSION = "0.0.2"
+const VERSION = "0.0.3"
 
 func usage() (map[string]interface{}, error) {
 	usage := `
@@ -27,17 +28,24 @@ Options:
     -h, --help          	show help
     -c CONF_FILE        	set config directory [default: ../conf]
     -l LOG_DIR          	set log directory [default: ../log]
-    --depth=<n>			overrite depth config in CONF_FILE
+    --output=<outputDirectory>	overrite outputDirectory config in CONF_FILE
+    --depth=<maxDepth>		overrite depth config in CONF_FILE
+    --interval=<crawlInterval>	overrite crawlInterval config in CONF_FILE
+    --timeout=<crawlTimeout>	overrite crawlTimeout config in CONF_FILE
     --target-url=<targetUrl>	overrite targetUrl config in CONF_FILE
+    --thread=<threadCount>	overrite threadCount config in CONF_FILE
     --storage=<disk|bos>	set storage driver [default: disk]
+    --seed=<seed>		override seed config in data/url.data
 
 Example:
 
+    ./mini_spider -v
+    ./mini_spider -h
     ./mini_spider -c ../conf -l ../log
     ./mini_spider -c /home/xxx/mini_spider/conf -l /home/xxx/mini_spider/log
-    ./mini_spider --depth=2
+    ./mini_spider --output=./output --depth=2 --interval=2 --timeout=60 --thread=10 --storage=bos
     ./mini_spider --target-url=(java|spring|go).*\\.(pdf)(\\?.+)?$
-    ./mini_spider --storage=bos`
+    ./mini_spider --seed=http://www.baidu.com,http://www.google.com`
 
 	return docopt.Parse(usage, nil, true, VERSION, false)
 }
@@ -50,6 +58,10 @@ func prepare(args map[string]interface{}) *config.Config {
 		os.Exit(1)
 	}
 
+	if args["--output"] != nil {
+		cfg.Spider.OutputDirectory = args["--output"].(string)
+	}
+
 	if args["--depth"] != nil {
 		depth := args["--depth"].(string)
 		maxDepth, err := strconv.Atoi(depth)
@@ -58,8 +70,32 @@ func prepare(args map[string]interface{}) *config.Config {
 		}
 	}
 
+	if args["--interval"] != nil {
+		interval := args["--interval"].(string)
+		crawlInterval, err := strconv.Atoi(interval)
+		if err == nil {
+			cfg.Spider.CrawlInterval = uint(crawlInterval)
+		}
+	}
+
+	if args["--timeout"] != nil {
+		timeout := args["--timeout"].(string)
+		crawlTimeout, err := strconv.Atoi(timeout)
+		if err == nil {
+			cfg.Spider.CrawlTimeout = uint(crawlTimeout)
+		}
+	}
+
 	if args["--target-url"] != nil {
 		cfg.Spider.TargetUrl = args["--target-url"].(string)
+	}
+
+	if args["--thread"] != nil {
+		thread := args["--thread"].(string)
+		threadCount, err := strconv.Atoi(thread)
+		if err == nil {
+			cfg.Spider.ThreadCount = uint(threadCount)
+		}
 	}
 
 	logDir := args["-l"].(string)
@@ -88,6 +124,35 @@ func getStorageDriver(args map[string]interface{}, cfg *config.Config) storage.S
 	return driver
 }
 
+func getSeeds(args map[string]interface{}, cfg *config.Config) []*spider.Seed {
+	if args["--seed"] != nil {
+		seed := strings.TrimSpace(args["--seed"].(string))
+		if len(seed) > 0 {
+			urls := strings.Split(seed, ",")
+			if length := len(urls); length > 0 {
+				seeds := make([]*spider.Seed, 0, length)
+				for _, v := range urls {
+					if url := strings.TrimSpace(v); url != "" {
+						seeds = append(seeds, spider.NewSeed(url))
+					}
+				}
+				if len(seeds) > 0 {
+					return seeds
+				}
+			}
+		}
+	}
+
+	seeds, err := spider.LoadSeedsFromFile(cfg.Spider.UrlListFile)
+	if err != nil {
+		log.Logger.Critical(err)
+		log.Logger.Close()
+		os.Exit(1)
+	}
+
+	return seeds
+}
+
 func main() {
 	args, _ := usage()
 	cfg := prepare(args)
@@ -101,9 +166,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	seeds, err := spider.LoadSeedsFromFile(cfg.Spider.UrlListFile)
-	if err != nil {
-		log.Logger.Critical(err)
+	seeds := getSeeds(args, cfg)
+	if len(seeds) == 0 {
+		log.Logger.Critical("no seeds specified")
 		log.Logger.Close()
 		os.Exit(1)
 	}
