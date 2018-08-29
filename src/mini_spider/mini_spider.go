@@ -24,18 +24,18 @@ func usage() (map[string]interface{}, error) {
 Usage: ./mini_spider [options]
 
 Options:
-    -v, --version       	show version
-    -h, --help          	show help
-    -c CONF_FILE        	set config directory [default: ../conf]
-    -l LOG_DIR          	set log directory [default: ../log]
+    -v, --version               show version
+    -h, --help                  show help
+    -c CONF_FILE                set config directory [default: ../conf]
+    -l LOG_DIR                  set log directory [default: ../log]
     --output=<outputDirectory>	overrite outputDirectory config in CONF_FILE
-    --depth=<maxDepth>		overrite depth config in CONF_FILE
+    --depth=<maxDepth>          overrite depth config in CONF_FILE
     --interval=<crawlInterval>	overrite crawlInterval config in CONF_FILE
     --timeout=<crawlTimeout>	overrite crawlTimeout config in CONF_FILE
     --target-url=<targetUrl>	overrite targetUrl config in CONF_FILE
-    --thread=<threadCount>	overrite threadCount config in CONF_FILE
-    --storage=<disk|bos>	set storage driver [default: disk]
-    --seed=<seed>		override seed config in data/url.data
+    --thread=<threadCount>      overrite threadCount config in CONF_FILE
+    --storage=<disk|bos>        set storage driver [default: disk]
+    --seed=<seed>               override seed config in data/url.data
 
 Example:
 
